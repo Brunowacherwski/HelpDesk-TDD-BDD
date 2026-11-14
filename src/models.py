@@ -16,3 +16,4 @@ class Chamado:
     tecnico: Optional[str] = None
     solucao: Optional[str] = None
     data_encerramento: Optional[datetime] = None
+    solicitante: Optional[str] = None

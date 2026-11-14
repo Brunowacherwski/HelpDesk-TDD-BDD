@@ -8,6 +8,8 @@ def menu():
         print("\n=== SISTEMA DE HELP DESK ===")
         print("1. Abrir chamado")
         print("2. Buscar chamado por ID")
+        print("3. Encerrar chamado")
+        print("4. Reabrir chamado")
         
         print("0. Sair")
 
@@ -25,6 +27,16 @@ def menu():
             elif opcao == "2":
                 cid = int(input("ID do chamado: "))
                 print(service.buscar_chamado(cid))
+            elif opcao == "3":
+                cid = int(input("ID do chamado: "))
+                solucao = input("Solução aplicada: ")
+                c = service.encerrar_chamado(cid, solucao)
+                print(f"Chamado #{c.id} encerrado em {c.data_encerramento:%d/%m/%Y %H:%M}.")
+
+            elif opcao == "4":
+                cid = int(input("ID do chamado: "))
+                c = service.reabrir_chamado(cid)
+                print(f"Chamado #{c.id} reaberto com status {c.status}.")
 
             elif opcao == "0":
                 print("Saindo...")
