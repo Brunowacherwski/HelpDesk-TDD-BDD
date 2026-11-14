@@ -10,7 +10,8 @@ def menu():
         print("2. Buscar chamado por ID")
         print("3. Encerrar chamado")
         print("4. Reabrir chamado")
-        
+        print("8. Filtrar chamados (Listagem)")
+        print("9. Excluir chamado")
         print("0. Sair")
 
         opcao = input("Escolha uma opção: ").strip()
@@ -37,6 +38,20 @@ def menu():
                 cid = int(input("ID do chamado: "))
                 c = service.reabrir_chamado(cid)
                 print(f"Chamado #{c.id} reaberto com status {c.status}.")
+
+            elif opcao == "8":
+                status = input("Filtrar por Status (Enter para ignorar): ").strip() or None
+                prio = input("Filtrar por Prioridade (Enter para ignorar): ").strip().capitalize() or None
+
+                resultados = service.filtrar_chamados(status=status, prioridade=prio)
+                print(f"\n--- Chamados Encontrados ({len(resultados)}) ---")
+                for c in resultados:
+                    print(c)
+
+            elif opcao == "9":
+                cid = int(input("ID do chamado para excluir: "))
+                service.excluir_chamado(cid)
+                print(f"Chamado #{cid} excluído com sucesso!")
 
             elif opcao == "0":
                 print("Saindo...")
