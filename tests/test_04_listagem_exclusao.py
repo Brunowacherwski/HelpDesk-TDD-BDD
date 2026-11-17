@@ -1,4 +1,4 @@
-x   import pytest
+import pytest
 from src.service import ChamadoService
 
 @pytest.fixture

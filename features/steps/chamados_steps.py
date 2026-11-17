@@ -3,6 +3,8 @@ from behave import given, when, then
 from src.service import ChamadoService
 
 
+# bruno
+
 @given("que o sistema de chamados foi iniciado")
 def step_iniciar_sistema(context):
     context.service = ChamadoService()
@@ -10,16 +12,26 @@ def step_iniciar_sistema(context):
     context.erro = None
 
 
-@given('que existe um chamado aberto com título "{titulo}" e prioridade "{prioridade}"')
-def step_criar_chamado_aberto(context, titulo, prioridade):
+@given('que existe um chamado aberto com título "{titulo}"')
+def step_criar_chamado_aberto(context, titulo):
     context.service = ChamadoService()
-    context.chamado = context.service.abrir_chamado(titulo, "Descrição padrão", prioridade)
+    context.chamado = context.service.abrir_chamado(titulo, "Descrição padrão", "Media")
     context.erro = None
 
 
-@when('abrir um chamado com título "{titulo}" e prioridade "{prioridade}"')
-def step_abrir_chamado(context, titulo, prioridade):
-    context.chamado = context.service.abrir_chamado(titulo, "Descrição", prioridade)
+@given('o chamado possuir prioridade "{prioridade}"')
+def step_definir_prioridade_dado(context, prioridade):
+    context.chamado.prioridade = prioridade
+
+
+@when('abrir um chamado com título "{titulo}"')
+def step_abrir_chamado(context, titulo):
+    context.chamado = context.service.abrir_chamado(titulo, "Descrição", "Media")
+
+
+@when('chamado possuir prioridade "{prioridade}"')
+def step_definir_prioridade_quando(context, prioridade):
+    context.chamado.prioridade = prioridade
 
 
 @when("tentar abrir um chamado sem título")
@@ -35,9 +47,13 @@ def step_buscar_chamado(context, chamado_id):
     context.chamado = context.service.buscar_chamado(chamado_id)
 
 
-@then('o chamado deve ser criado com status "{status}" e ID {chamado_id:d}')
-def step_verificar_criacao(context, status, chamado_id):
+@then('o chamado deve ser criado com status "{status}"')
+def step_verificar_status_criacao(context, status):
     assert context.chamado.status == status
+
+
+@then("o chamado possuir ID {chamado_id:d}")
+def step_verificar_id_criacao(context, chamado_id):
     assert context.chamado.id == chamado_id
 
 
@@ -50,6 +66,8 @@ def step_verificar_titulo(context, titulo_esperado):
 def step_verificar_erro(context):
     assert context.erro is not None
 
+
+# lucas
 
 @given('que existe um chamado com título "{titulo}", status "{status}" e prioridade "{prioridade}"')
 @given('existe um chamado com título "{titulo}", status "{status}" e prioridade "{prioridade}"')
@@ -101,4 +119,4 @@ def step_verificar_primeiro_da_lista(context, titulo, prioridade):
 @then("o chamado de ID {chamado_id:d} não deve mais existir no sistema")
 def step_verificar_chamado_excluido(context, chamado_id):
     with pytest.raises(ValueError, match="não encontrado"):
-        context.service.buscar_chamado(chamado_id)    
+        context.service.buscar_chamado(chamado_id)
