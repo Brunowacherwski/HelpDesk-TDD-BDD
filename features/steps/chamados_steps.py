@@ -34,7 +34,7 @@ def step_definir_prioridade_quando(context, prioridade):
     context.chamado.prioridade = prioridade
 
 
-@when("tentar abrir um chamado sem título")
+@when('tentar abrir um chamado com título ""')
 def step_abrir_sem_titulo(context):
     try:
         context.service.abrir_chamado("", "Descrição")
@@ -42,9 +42,25 @@ def step_abrir_sem_titulo(context):
         context.erro = str(e)
 
 
+@when('tentar abrir um chamado com prioridade inválida "{prioridade}"')
+def step_abrir_prioridade_invalida(context, prioridade):
+    try:
+        context.service.abrir_chamado("Erro no sistema", "Descrição", prioridade)
+    except ValueError as e:
+        context.erro = str(e)
+
+
 @when("buscar o chamado de ID {chamado_id:d}")
 def step_buscar_chamado(context, chamado_id):
     context.chamado = context.service.buscar_chamado(chamado_id)
+
+
+@when("tentar buscar o chamado de ID {chamado_id:d}")
+def step_tentar_buscar_chamado(context, chamado_id):
+    try:
+        context.service.buscar_chamado(chamado_id)
+    except ValueError as e:
+        context.erro = str(e)
 
 
 @then('o chamado deve ser criado com status "{status}"')
@@ -60,11 +76,6 @@ def step_verificar_id_criacao(context, chamado_id):
 @then('o sistema deve retornar o chamado com título "{titulo_esperado}"')
 def step_verificar_titulo(context, titulo_esperado):
     assert context.chamado.titulo == titulo_esperado
-
-
-@then("o sistema deve bloquear a ação com erro de validação")
-def step_verificar_erro(context):
-    assert context.erro is not None
 
 
 # lucas

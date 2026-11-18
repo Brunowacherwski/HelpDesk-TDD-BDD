@@ -3,18 +3,28 @@ Funcionalidade: Abertura e Consulta de Chamados
 
   Cenário: Abrir um chamado com dados válidos
     Dado que o sistema de chamados foi iniciado
-    Quando abrir um chamado com título "Erro no sistema" 
+    Quando abrir um chamado com título "Erro no sistema"
     E chamado possuir prioridade "Alta"
-    Então o chamado deve ser criado com status "Aberto" 
+    Então o chamado deve ser criado com status "Aberto"
     E o chamado possuir ID 1
 
   Cenário: Impedir abertura de chamado sem título
     Dado que o sistema de chamados foi iniciado
-    Quando tentar abrir um chamado sem título
-    Então o sistema deve bloquear a ação com erro de validação
+    Quando tentar abrir um chamado com título ""
+    Então o sistema deve bloquear a ação com a mensagem "O título do chamado é obrigatório."
+
+  Cenário: Impedir abertura de chamado com prioridade inválida
+    Dado que o sistema de chamados foi iniciado
+    Quando tentar abrir um chamado com prioridade inválida "Urgentissima"
+    Então o sistema deve bloquear a ação com a mensagem "Prioridade inválida."
 
   Cenário: Buscar um chamado existente pelo ID
-    Dado que existe um chamado aberto com título "Monitor sem sinal" 
+    Dado que existe um chamado aberto com título "Monitor sem sinal"
     E o chamado possuir prioridade "Media"
     Quando buscar o chamado de ID 1
     Então o sistema deve retornar o chamado com título "Monitor sem sinal"
+
+  Cenário: Impedir busca de chamado inexistente
+    Dado que o sistema de chamados foi iniciado
+    Quando tentar buscar o chamado de ID 999
+    Então o sistema deve bloquear a ação com a mensagem "Chamado 999 não encontrado."
