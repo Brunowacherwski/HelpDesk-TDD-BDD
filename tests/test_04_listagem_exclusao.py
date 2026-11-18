@@ -1,46 +1,66 @@
 import pytest
 from src.service import ChamadoService
 
+
 @pytest.fixture
 def service():
-    svc = ChamadoService()
-    svc.abrir_chamado("Problema no mouse", "Não clica", "Baixa") # ID 1
-    svc.abrir_chamado("Servidor caído", "Fora do ar", "Alta")     # ID 2
-    svc.abrir_chamado("Dúvida de acesso", "Esqueci a senha", "Media") # ID 3
-    return svc
+    return ChamadoService()
 
-def test_filtrar_chamados_ordena_alta_no_topo(service):
-    resultados = service.filtrar_chamados()
-    assert resultados[0].prioridade == "Alta"
-    assert resultados[1].prioridade == "Media"
-    assert resultados[2].prioridade == "Baixa"
 
-def test_filtrar_chamados_por_status(service):
-    # Simulando um chamado fechado
-    chamado_fechado = service.buscar_chamado(1)
-    chamado_fechado.status = "Fechado"
-    
+def test_filtrar_chamados_por_status_ordena_alta_no_topo(service):
+    c1 = service.abrir_chamado("Trocar mouse", "Descrição padrão", "Baixa")
+    c1.status = "Aberto"
+
+    c2 = service.abrir_chamado("Servidor fora do ar", "Descrição padrão", "Alta")
+    c2.status = "Aberto"
+
+    c3 = service.abrir_chamado("Erro antigo", "Descrição padrão", "Alta")
+    c3.status = "Fechado"
+
     resultados = service.filtrar_chamados(status="Aberto")
+
     assert len(resultados) == 2
-    assert todos_sao_abertos(resultados)
+    assert resultados[0].titulo == "Servidor fora do ar"
+    assert resultados[0].prioridade == "Alta"
+    assert resultados[1].titulo == "Trocar mouse"
+    assert resultados[1].prioridade == "Baixa"
+
 
 def test_filtrar_chamados_por_prioridade(service):
-    resultados = service.filtrar_chamados(prioridade="Alta")
-    assert len(resultados) == 1
-    assert resultados[0].id == 2
+    c1 = service.abrir_chamado("Trocar mouse", "Descrição padrão", "Baixa")
+    c1.status = "Aberto"
 
-def test_excluir_chamado_aberto(service):
-    service.excluir_chamado(1) # O chamado 1 nasce como 'Aberto'
-    with pytest.raises(ValueError, match="não encontrado"):
+    c2 = service.abrir_chamado("Dúvida no sistema", "Descrição padrão", "Media")
+    c2.status = "Aberto"
+
+    resultados = service.filtrar_chamados(prioridade="Media")
+
+    assert len(resultados) == 1
+    assert resultados[0].titulo == "Dúvida no sistema"
+    assert resultados[0].prioridade == "Media"
+
+
+def test_excluir_chamado_com_status_aberto(service):
+    chamado = service.abrir_chamado("Monitor sem sinal", "Descrição padrão", "Media")
+    chamado.status = "Aberto"
+
+    service.excluir_chamado(1)
+
+    with pytest.raises(ValueError, match="Chamado 1 não encontrado."):
         service.buscar_chamado(1)
 
-def test_excluir_chamado_diferente_de_aberto_falha(service):
-    chamado = service.buscar_chamado(2)
-    chamado.status = "Em Andamento" # Modificando para forçar a falha
-    
-    with pytest.raises(ValueError, match="Apenas chamados 'Abertos' podem ser excluídos"):
-        service.excluir_chamado(2)
 
-# Função auxiliar para o teste
-def todos_sao_abertos(chamados):
-    return all(c.status == "Aberto" for c in chamados)
+def test_impedir_exclusao_de_chamado_que_nao_esta_aberto(service):
+    chamado = service.abrir_chamado("Falha na rede", "Descrição padrão", "Alta")
+    chamado.status = "Em Andamento"
+
+    with pytest.raises(
+        ValueError,
+        match="O chamado #1 possui status 'Em Andamento'. Apenas chamados 'Abertos' podem ser excluídos.",
+    ):
+        service.excluir_chamado(1)
+
+
+def test_impedir_exclusao_de_chamado_inexistente(service):
+    with pytest.raises(ValueError, match="Chamado 999 não encontrado."):
+        service.excluir_chamado(999)

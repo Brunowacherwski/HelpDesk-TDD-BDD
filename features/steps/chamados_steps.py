@@ -69,15 +69,13 @@ def step_verificar_erro(context):
 
 # lucas
 
-@given('que existe um chamado com título "{titulo}", status "{status}" e prioridade "{prioridade}"')
-@given('existe um chamado com título "{titulo}", status "{status}" e prioridade "{prioridade}"')
-def step_criar_chamado_com_status(context, titulo, status, prioridade):
-    if not hasattr(context, "service"):
+@given('existe um chamado com título "{titulo}"')
+@given('que existe um chamado com título "{titulo}"')
+def step_criar_chamado_apenas_titulo(context, titulo):
+    if not hasattr(context, "service") or context.service is None:
         context.service = ChamadoService()
         context.erro = None
-    chamado = context.service.abrir_chamado(titulo, "Descrição padrão", prioridade)
-    chamado.status = status
-    context.chamado = chamado
+    context.chamado = context.service.abrir_chamado(titulo, "Descrição padrão", "Media")
 
 
 @when('filtrar os chamados pelo status "{status}"')
@@ -109,10 +107,15 @@ def step_verificar_quantidade_chamados(context, quantidade):
     assert len(context.resultados) == quantidade
 
 
-@then('o primeiro chamado da lista deve ter título "{titulo}" e prioridade "{prioridade}"')
-def step_verificar_primeiro_da_lista(context, titulo, prioridade):
+@then('o primeiro chamado da lista deve ter título "{titulo}"')
+def step_verificar_titulo_primeiro_da_lista(context, titulo):
     assert len(context.resultados) > 0
     assert context.resultados[0].titulo == titulo
+
+
+@then('o primeiro chamado da lista deve ter prioridade "{prioridade}"')
+def step_verificar_prioridade_primeiro_da_lista(context, prioridade):
+    assert len(context.resultados) > 0
     assert context.resultados[0].prioridade == prioridade
 
 
@@ -120,8 +123,6 @@ def step_verificar_primeiro_da_lista(context, titulo, prioridade):
 def step_verificar_chamado_excluido(context, chamado_id):
     with pytest.raises(ValueError, match="não encontrado"):
         context.service.buscar_chamado(chamado_id)
-
-# felipe
 
 @given('o chamado possuir status "{status}"')
 def step_definir_status_dado(context, status):
