@@ -120,3 +120,89 @@ def step_verificar_primeiro_da_lista(context, titulo, prioridade):
 def step_verificar_chamado_excluido(context, chamado_id):
     with pytest.raises(ValueError, match="não encontrado"):
         context.service.buscar_chamado(chamado_id)
+
+# felipe
+
+@given('o chamado possuir status "{status}"')
+def step_definir_status_dado(context, status):
+    context.chamado.status = status
+
+
+@when('cadastrar a nova prioridade "{prioridade}"')
+def step_cadastrar_prioridade(context, prioridade):
+    context.prioridades = context.service.cadastrar_prioridade(prioridade)
+
+
+@when('tentar cadastrar a prioridade vazia ""')
+def step_tentar_cadastrar_prioridade_vazia(context):
+    try:
+        context.service.cadastrar_prioridade("")
+    except ValueError as e:
+        context.erro = str(e)
+
+
+@when('tentar cadastrar a prioridade duplicada "{prioridade}"')
+def step_tentar_cadastrar_prioridade_duplicada(context, prioridade):
+    try:
+        context.service.cadastrar_prioridade(prioridade)
+    except ValueError as e:
+        context.erro = str(e)
+
+
+@when('atribuir o técnico "{tecnico}" ao chamado de ID {chamado_id:d}')
+def step_atribuir_tecnico(context, tecnico, chamado_id):
+    context.chamado = context.service.atribuir_tecnico(chamado_id, tecnico)
+
+
+@when('tentar atribuir o técnico vazio "" ao chamado de ID {chamado_id:d}')
+def step_tentar_atribuir_tecnico_vazio(context, chamado_id):
+    try:
+        context.service.atribuir_tecnico(chamado_id, "")
+    except ValueError as e:
+        context.erro = str(e)
+
+
+@when('tentar atribuir o técnico "{tecnico}" ao chamado de ID {chamado_id:d}')
+def step_tentar_atribuir_tecnico_erro(context, tecnico, chamado_id):
+    try:
+        context.service.atribuir_tecnico(chamado_id, tecnico)
+    except ValueError as e:
+        context.erro = str(e)
+
+
+@when('alterar a prioridade do chamado de ID {chamado_id:d} para "{prioridade}"')
+def step_alterar_prioridade(context, chamado_id, prioridade):
+    context.chamado = context.service.alterar_prioridade(chamado_id, prioridade)
+
+
+@when('tentar alterar a prioridade do chamado de ID {chamado_id:d} para "{prioridade}"')
+def step_tentar_alterar_prioridade_erro(context, chamado_id, prioridade):
+    try:
+        context.service.alterar_prioridade(chamado_id, prioridade)
+    except ValueError as e:
+        context.erro = str(e)
+
+
+@then('a prioridade "{prioridade}" deve estar na lista de prioridades do sistema')
+def step_verificar_prioridade_cadastrada(context, prioridade):
+    assert prioridade in context.service._prioridades
+
+
+@then('o chamado deve possuir o técnico "{tecnico}"')
+def step_verificar_tecnico_chamado(context, tecnico):
+    assert context.chamado.tecnico == tecnico
+
+
+@then('o status do chamado deve ser atualizado para "{status}"')
+def step_verificar_status_atualizado(context, status):
+    assert context.chamado.status == status
+
+
+@then('a prioridade do chamado deve ser atualizada para "{prioridade}"')
+def step_verificar_prioridade_atualizada(context, prioridade):
+    assert context.chamado.prioridade == prioridade
+
+
+@then('o sistema deve bloquear a ação com a mensagem "{mensagem}"')
+def step_verificar_mensagem_exata(context, mensagem):
+    assert context.erro == mensagem

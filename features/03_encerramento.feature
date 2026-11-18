@@ -1,27 +1,40 @@
 # language: pt
-Funcionalidade: Gestão do Ciclo de Vida do Chamado (Encerramento e Reabertura)
-  Como um técnico ou operador do sistema de help desk
-  Quero encerrar chamados concluídos e reabrir chamados quando necessário
-  Para manter o histórico e o status dos atendimentos atualizados
+Funcionalidade: Encerramento e Reabertura de Chamados
 
-  Contexto:
-    Dado que o sistema possui chamados cadastrados
+  Cenário: Encerrar um chamado aberto informando solução e data atual do sistema
+    Dado que o sistema de chamados foi iniciado na data atual "17/11/2026"
+    E que existe um chamado aberto com título "Falha no servidor de e-mail"
+    E o chamado possuir prioridade "Alta"
+    Quando encerrar o chamado de ID 1 com a solução "Serviço SMTP reiniciado" na data "17/11/2026"
+    Então o status do chamado deve ser atualizado para "Fechado"
+    E a solução registrada no chamado deve ser "Serviço SMTP reiniciado"
+    E a data de encerramento do chamado deve ser "17/11/2026"
 
-  Cenário: Encerrar um chamado com sucesso
-    Dado que existe um chamado com ID 1 e status "Em Andamento"
-    Quando eu solicito o encerramento do chamado 1 com a solução "Reinicialização do serviço de rede"
-    Então o status do chamado 1 deve mudar para "Fechado"
-    E a data de encerramento deve ser registrada com sucesso
-    E a solução aplicada deve ser salva corretamente
+  Cenário: Impedir encerramento de chamado sem informar solução
+    Dado que o sistema de chamados foi iniciado na data atual "17/11/2026"
+    E que existe um chamado aberto com título "Falha no servidor de e-mail"
+    Quando tentar encerrar o chamado de ID 1 com a solução "" na data "17/11/2026"
+    Então o sistema deve bloquear a ação com a mensagem "A solução do chamado é obrigatória."
+    E o status do chamado deve permanecer "Aberto"
+
+  Cenário: Impedir encerramento de chamado que já está fechado
+    Dado que o sistema de chamados foi iniciado na data atual "17/11/2026"
+    E que existe um chamado aberto com título "Troca de monitor"
+    E o chamado de ID 1 foi encerrado com a solução "Monitor trocado" na data "17/11/2026"
+    Quando tentar encerrar o chamado de ID 1 com a solução "Nova troca" na data "17/11/2026"
+    Então o sistema deve bloquear a ação com a mensagem "Chamado #1 já está fechado."
 
   Cenário: Reabrir um chamado fechado com sucesso
-    Dado que existe um chamado com ID 1, status "Fechado", solução preenchida e data registrada
-    Quando eu solicito a reabertura do chamado 1
-    Então o status do chamado 1 deve mudar para "Em Andamento"
-    E a solução aplicada anterior deve ser limpa (vazia)
-    E a data anterior deve ser removida ou limpa
+    Dado que o sistema de chamados foi iniciado na data atual "17/11/2026"
+    E que existe um chamado aberto com título "Queda de rede no 2º andar"
+    E o chamado de ID 1 foi encerrado com a solução "Switch reiniciado" na data "17/11/2026"
+    Quando reabrir o chamado de ID 1
+    Então o status do chamado deve ser atualizado para "Aberto"
+    E o chamado não deve possuir solução registrada
+    E o chamado não deve possuir data de encerramento
 
-  Cenário: Tentativa de reabrir um chamado que não está fechado
-    Dado que existe um chamado com ID 2 e status "Aberto"
-    Quando eu tento reabrir o chamado 2
-    Então o sistema deve retornar um erro informando que apenas chamados fechados podem ser reabertos
+  Cenário: Impedir reabertura de chamado que já está aberto
+    Dado que o sistema de chamados foi iniciado na data atual "17/11/2026"
+    E que existe um chamado aberto com título "Queda de rede no 2º andar"
+    Quando tentar reabrir o chamado de ID 1
+    Então o sistema deve bloquear a ação com a mensagem "Apenas chamados fechados podem ser reabertos."

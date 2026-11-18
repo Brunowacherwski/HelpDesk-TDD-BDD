@@ -3,13 +3,16 @@ from typing import List, Optional
 
 from src.models import Chamado, PRIORIDADES_VALIDAS
 
+
 STATUS_ABERTO = "Aberto"
+STATUS_EM_ANDAMENTO = "Em Andamento"
 STATUS_FECHADO = "Fechado"
 
 class ChamadoService:
     def __init__(self):
         self._chamados: List[Chamado] = []
         self._proximo_id: int = 1
+        self._prioridades: List[str] = list(PRIORIDADES_VALIDAS)
 
     # ================= INTEGRANTE 1 =================
     def abrir_chamado(
@@ -37,6 +40,40 @@ class ChamadoService:
                 return chamado
 
         raise ValueError(f"Chamado {chamado_id} não encontrado.")
+
+    # ================= INTEGRANTE 2  =================
+    def cadastrar_prioridade(self, nova_prioridade: str) -> List[str]:
+        if not nova_prioridade or not nova_prioridade.strip():
+            raise ValueError("O nome da prioridade é obrigatório.")
+
+        prioridade_limpa = nova_prioridade.strip()
+        if any(p.lower() == prioridade_limpa.lower() for p in self._prioridades):
+            raise ValueError("Prioridade já cadastrada.")
+
+        self._prioridades.append(prioridade_limpa)
+        return self._prioridades
+
+    def atribuir_tecnico(self, chamado_id: int, tecnico: str) -> Chamado:
+        chamado = self.buscar_chamado(chamado_id)
+        if chamado.status == STATUS_FECHADO:
+            raise ValueError(f"Chamado #{chamado_id} já está fechado.")
+        if not tecnico or not tecnico.strip():
+            raise ValueError("O nome do técnico é obrigatório.")
+
+        chamado.tecnico = tecnico.strip()
+        chamado.status = STATUS_EM_ANDAMENTO
+        return chamado
+
+    def alterar_prioridade(self, chamado_id: int, nova_prioridade: str) -> Chamado:
+        chamado = self.buscar_chamado(chamado_id)
+        if chamado.status == STATUS_FECHADO:
+            raise ValueError(f"Chamado #{chamado_id} já está fechado.")
+        if not nova_prioridade or nova_prioridade.strip() not in self._prioridades:
+            raise ValueError("Prioridade inválida.")
+
+        chamado.prioridade = nova_prioridade.strip()
+        return chamado
+
     # ================= INTEGRANTE 3  =================
 
     def encerrar_chamado(
@@ -65,7 +102,6 @@ class ChamadoService:
         chamado.data_encerramento = None
         chamado.status = "Aberto"
         return chamado
-        raise ValueError(f"Chamado #{chamado_id} não encontrado.")
 
     # ================= INTEGRANTE 4  =================
 

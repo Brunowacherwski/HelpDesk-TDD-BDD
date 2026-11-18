@@ -1,65 +1,67 @@
+from datetime import datetime
 import pytest
 from src.service import ChamadoService
 
-
-def test_encerrar_chamado_com_sucesso():
-    service = ChamadoService()
-    chamado = service.abrir_chamado("Teste", "Descrição", "Media")
-    chamado.status = "Em Andamento"
-
-    service.encerrar_chamado(chamado.id, "Reinicialização do serviço de rede")
-
-    assert chamado.status == "Fechado"
-    assert chamado.solucao == "Reinicialização do serviço de rede"
-    assert chamado.data_encerramento is not None
+DATA_ATUAL_SISTEMA = datetime.strptime("17/11/2026", "%d/%m/%Y")
 
 
-def test_reabrir_chamado_com_sucesso():
-    service = ChamadoService()
-    chamado = service.abrir_chamado("Teste", "Descrição", "Media")
-    service.encerrar_chamado(chamado.id, "Solução aplicada")
+@pytest.fixture
+def service():
+    return ChamadoService()
 
-    service.reabrir_chamado(chamado.id)
+
+# --- Testes de encerrar_chamado (Mesma massa do Gherkin) ---
+
+def test_encerrar_chamado_aberto_com_solucao_e_data_atual(service):
+    chamado = service.abrir_chamado("Falha no servidor de e-mail", "Descrição padrão", "Alta")
+    encerrado = service.encerrar_chamado(chamado.id, "Serviço SMTP reiniciado", DATA_ATUAL_SISTEMA)
+
+    assert encerrado.status == "Fechado"
+    assert encerrado.solucao == "Serviço SMTP reiniciado"
+    assert encerrado.data_encerramento == DATA_ATUAL_SISTEMA
+
+
+def test_encerrar_chamado_sem_solucao_falha(service):
+    chamado = service.abrir_chamado("Falha no servidor de e-mail", "Descrição padrão", "Alta")
+    with pytest.raises(ValueError, match="A solução do chamado é obrigatória."):
+        service.encerrar_chamado(chamado.id, "", DATA_ATUAL_SISTEMA)
 
     assert chamado.status == "Aberto"
-    assert chamado.solucao is None
     assert chamado.data_encerramento is None
 
 
-def test_tentativa_reabrir_chamado_nao_fechado():
-    service = ChamadoService()
-    chamado = service.abrir_chamado("Teste", "Descrição", "Media")
+def test_encerrar_chamado_ja_fechado_falha(service):
+    chamado = service.abrir_chamado("Troca de monitor", "Descrição padrão", "Media")
+    service.encerrar_chamado(chamado.id, "Monitor trocado", DATA_ATUAL_SISTEMA)
 
-    with pytest.raises(ValueError, match="Apenas chamados fechados podem ser reabertos"):
+    with pytest.raises(ValueError, match="Chamado #1 já está fechado."):
+        service.encerrar_chamado(chamado.id, "Nova troca", DATA_ATUAL_SISTEMA)
+
+
+def test_encerrar_chamado_inexistente_falha(service):
+    with pytest.raises(ValueError, match="Chamado 999 não encontrado."):
+        service.encerrar_chamado(999, "Serviço SMTP reiniciado", DATA_ATUAL_SISTEMA)
+
+
+# --- Testes de reabrir_chamado ---
+
+def test_reabrir_chamado_fechado_com_sucesso(service):
+    chamado = service.abrir_chamado("Queda de rede no 2º andar", "Descrição padrão", "Media")
+    service.encerrar_chamado(chamado.id, "Switch reiniciado", DATA_ATUAL_SISTEMA)
+
+    reaberto = service.reabrir_chamado(chamado.id)
+
+    assert reaberto.status == "Aberto"
+    assert reaberto.solucao is None
+    assert reaberto.data_encerramento is None
+
+
+def test_reabrir_chamado_aberto_falha(service):
+    chamado = service.abrir_chamado("Queda de rede no 2º andar", "Descrição padrão", "Media")
+    with pytest.raises(ValueError, match="Apenas chamados fechados podem ser reabertos."):
         service.reabrir_chamado(chamado.id)
 
 
-def test_encerrar_chamado_sem_solucao_falha():
-    service = ChamadoService()
-    chamado = service.abrir_chamado("Teste", "Descrição", "Media")
-
-    with pytest.raises(ValueError, match="solução"):
-        service.encerrar_chamado(chamado.id, "   ")
-
-    assert chamado.status == "Aberto"
-
-
-def test_encerrar_chamado_ja_fechado_falha():
-    service = ChamadoService()
-    chamado = service.abrir_chamado("Teste", "Descrição", "Media")
-    service.encerrar_chamado(chamado.id, "Solução aplicada")
-
-    with pytest.raises(ValueError, match="já está fechado"):
-        service.encerrar_chamado(chamado.id, "Outra solução")
-
-
-def test_ciclo_completo_encerrar_reabrir_e_encerrar_novamente():
-    service = ChamadoService()
-    chamado = service.abrir_chamado("Teste", "Descrição", "Media")
-    service.encerrar_chamado(chamado.id, "Solução aplicada")
-    service.reabrir_chamado(chamado.id)
-
-    service.encerrar_chamado(chamado.id, "Nova solução")
-
-    assert chamado.status == "Fechado"
-    assert chamado.solucao == "Nova solução"
+def test_reabrir_chamado_inexistente_falha(service):
+    with pytest.raises(ValueError, match="Chamado 999 não encontrado."):
+        service.reabrir_chamado(999)

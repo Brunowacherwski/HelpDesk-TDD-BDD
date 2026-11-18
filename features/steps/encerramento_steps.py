@@ -1,115 +1,80 @@
+from datetime import datetime
 from behave import given, when, then
 from src.service import ChamadoService
 
 
-@given("que o sistema possui chamados cadastrados")
-def step_sistema_com_chamados(context):
+@given('que o sistema de chamados foi iniciado na data atual "{data_str}"')
+def step_iniciar_sistema_com_data(context, data_str):
     context.service = ChamadoService()
+    context.data_atual = datetime.strptime(data_str, "%d/%m/%Y")
     context.chamado = None
     context.erro = None
 
 
-@given('que existe um chamado com ID {chamado_id:d} e status "{status}"')
-def step_criar_chamado_status(context, chamado_id, status):
-    if not hasattr(context, "service"):
-        context.service = ChamadoService()
-    while context.service._proximo_id <= chamado_id:
-        chamado = context.service.abrir_chamado(
-            f"Chamado {context.service._proximo_id}", "Descrição", "Media"
-        )
-    chamado.status = status
-    context.chamado = chamado
-    context.erro = None
+@given('o chamado de ID {chamado_id:d} foi encerrado com a solução "{solucao}" na data "{data_str}"')
+def step_chamado_ja_encerrado(context, chamado_id, solucao, data_str):
+    data_enc = datetime.strptime(data_str, "%d/%m/%Y")
+    context.chamado = context.service.encerrar_chamado(chamado_id, solucao, data_enc)
 
 
-@given('que existe um chamado com ID {chamado_id:d}, status "Fechado", solução preenchida e data registrada')
-def step_criar_chamado_fechado(context, chamado_id):
-    if not hasattr(context, "service"):
-        context.service = ChamadoService()
-    while context.service._proximo_id <= chamado_id:
-        chamado = context.service.abrir_chamado(
-            f"Chamado {context.service._proximo_id}", "Descrição", "Media"
-        )
-    context.service.encerrar_chamado(chamado.id, "Solução aplicada anteriormente")
-    context.chamado = chamado
-    context.erro = None
+@when('encerrar o chamado de ID {chamado_id:d} com a solução "{solucao}" na data "{data_str}"')
+def step_encerrar_chamado(context, chamado_id, solucao, data_str):
+    data_enc = datetime.strptime(data_str, "%d/%m/%Y")
+    context.chamado = context.service.encerrar_chamado(chamado_id, solucao, data_enc)
 
 
-@when('eu solicito o encerramento do chamado {chamado_id:d} com a solução "{solucao}"')
-def step_solicitar_encerramento(context, chamado_id, solucao):
+@when('tentar encerrar o chamado de ID {chamado_id:d} com a solução "{solucao}" na data "{data_str}"')
+def step_tentar_encerrar_chamado(context, chamado_id, solucao, data_str):
+    data_enc = datetime.strptime(data_str, "%d/%m/%Y")
     try:
-        context.chamado = context.service.encerrar_chamado(chamado_id, solucao)
-        context.erro = None
+        context.service.encerrar_chamado(chamado_id, solucao, data_enc)
     except ValueError as e:
         context.erro = str(e)
 
 
-@when("eu solicito o encerramento do chamado {chamado_id:d} sem informar a solução")
-def step_solicitar_encerramento_sem_solucao(context, chamado_id):
+@when('tentar encerrar o chamado de ID {chamado_id:d} com a solução "" na data "{data_str}"')
+def step_tentar_encerrar_chamado_sem_solucao(context, chamado_id, data_str):
+    data_enc = datetime.strptime(data_str, "%d/%m/%Y")
     try:
-        context.chamado = context.service.encerrar_chamado(chamado_id, "")
-        context.erro = None
+        context.service.encerrar_chamado(chamado_id, "", data_enc)
     except ValueError as e:
         context.erro = str(e)
 
 
-@when("eu solicito a reabertura do chamado {chamado_id:d}")
-def step_solicitar_reabertura(context, chamado_id):
+@when("reabrir o chamado de ID {chamado_id:d}")
+def step_reabrir_chamado(context, chamado_id):
+    context.chamado = context.service.reabrir_chamado(chamado_id)
+
+
+@when("tentar reabrir o chamado de ID {chamado_id:d}")
+def step_tentar_reabrir_chamado(context, chamado_id):
     try:
-        context.chamado = context.service.reabrir_chamado(chamado_id)
-        context.erro = None
+        context.service.reabrir_chamado(chamado_id)
     except ValueError as e:
         context.erro = str(e)
 
 
-@when("eu tento reabrir o chamado {chamado_id:d}")
-def step_tentar_reabrir(context, chamado_id):
-    try:
-        context.chamado = context.service.reabrir_chamado(chamado_id)
-        context.erro = None
-    except ValueError as e:
-        context.erro = str(e)
+@then('a solução registrada no chamado deve ser "{solucao_esperada}"')
+def step_verificar_solucao(context, solucao_esperada):
+    assert context.chamado.solucao == solucao_esperada
 
 
-@then('o status do chamado {chamado_id:d} deve mudar para "{status_esperado}"')
-def step_verificar_status_chamado(context, chamado_id, status_esperado):
-    chamado = context.service.buscar_chamado(chamado_id)
-    assert chamado.status == status_esperado
+@then('a data de encerramento do chamado deve ser "{data_str}"')
+def step_verificar_data_encerramento(context, data_str):
+    data_esperada = datetime.strptime(data_str, "%d/%m/%Y")
+    assert context.chamado.data_encerramento == data_esperada
 
 
-@then('o status do chamado {chamado_id:d} deve mudar para "Em Andamento" ou "Aberto"')
-def step_verificar_status_reaberto(context, chamado_id):
-    chamado = context.service.buscar_chamado(chamado_id)
-    assert chamado.status in ("Em Andamento", "Aberto")
+@then('o status do chamado deve permanecer "{status}"')
+def step_verificar_status_permanece(context, status):
+    assert context.chamado.status == status
 
 
-@then("a data de encerramento deve ser registrada com sucesso")
-def step_verificar_data_registrada(context):
-    assert context.chamado.data_encerramento is not None
-
-
-@then("a solução aplicada deve ser salva corretamente")
-def step_verificar_solucao_salva(context):
-    assert context.chamado.solucao is not None and len(context.chamado.solucao) > 0
-
-
-@then("a solução aplicada anterior deve ser limpa (vazia)")
-def step_verificar_solucao_limpa(context):
+@then("o chamado não deve possuir solução registrada")
+def step_verificar_sem_solucao(context):
     assert context.chamado.solucao is None
 
 
-@then("a data anterior deve ser removida ou limpa")
-def step_verificar_data_limpa(context):
+@then("o chamado não deve possuir data de encerramento")
+def step_verificar_sem_data_encerramento(context):
     assert context.chamado.data_encerramento is None
-
-
-@then("o sistema deve retornar um erro informando que apenas chamados fechados podem ser reabertos")
-def step_verificar_erro_reabertura(context):
-    assert context.erro is not None
-    assert "apenas chamados fechados" in context.erro.lower()
-
-
-@then('o sistema deve retornar um erro contendo "{trecho}"')
-def step_verificar_erro_contendo(context, trecho):
-    assert context.erro is not None
-    assert trecho.lower() in context.erro.lower()
